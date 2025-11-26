@@ -5,7 +5,7 @@ import { DistributionConfig, DistributionGeneratorProps } from '../types';
 function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
   const [sampleSize, setSampleSize] = useState<string>('none');
   const [selectedDistribution, setSelectedDistribution] = useState<string>('normal');
-  const [params, setParams] = useState<Record<string, number>>({});
+  const [params, setParams] = useState<Record<string, number | undefined>>({});
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Define configurations for various distributions
@@ -14,7 +14,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
       name: 'Normal Distribution',
       params: [
         { name: 'mean', label: 'Mean (μ)', min: -100, max: 100, step: 0.1, defaultValue: 0 },
-        { name: 'std', label: 'Standard Deviation (σ)', min: 0.1, max: 20, step: 0.1, defaultValue: 1 },
+        { name: 'std', label: 'Standard Deviation (σ)', min: -100, max: 100, step: 0.1, defaultValue: 0 },
       ],
       formula: 'f(x) = (1/(σ√(2π))) * e^(-(x-μ)²/(2σ²))',
     },
@@ -68,7 +68,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
     setParams(initialParams);
   }, [selectedDistribution]);
 
-  const handleParamChange = (paramName: string, value: number) => {
+  const handleParamChange = (paramName: string, value: number | undefined) => {
     setParams((prevParams) => ({
       ...prevParams,
       [paramName]: value,
@@ -174,11 +174,19 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
 
   const handleGenerate = () => {
     try {
-      setErrorMessage('');
+      // Clear previous errors except for standard deviation negative error
+      if (errorMessage !== 'Standard deviation cannot be negative') {
+        setErrorMessage('');
+      }
       
       // Validate parameters
       if (selectedDistribution === 'uniform' && params.a >= params.b) {
         throw new Error('Minimum value must be less than maximum value for uniform distribution');
+      }
+      
+      // Validate standard deviation before generating
+      if (selectedDistribution === 'normal' && params.std !== undefined && params.std <= 0) {
+        throw new Error('Standard deviation must be positive for normal distribution');
       }
       
       // Use setTimeout to simulate asynchronous operation without async/await
@@ -252,14 +260,34 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
                     const value = e.target.value;
                     // Allow empty or numeric values
                     if (value === '' || /^-?\d*\.?\d*$/.test(value)) {
-                      // For standard deviation and parameters that must be positive
-                      if (value !== '' && (param.name === 'std' || param.name === 'p' || param.name === 'lambda' || param.name === 'shape' || param.name === 'scale')) {
+                      // Handle standard deviation separately for negative value error
+                      if (param.name === 'std') {
+                        if (value === '') {
+                          handleParamChange(param.name, undefined);
+                          setErrorMessage('');
+                        } else {
+                          const numValue = parseFloat(value);
+                          if (numValue < 0) {
+                            // Set error message for negative standard deviation
+                            setErrorMessage('Standard deviation cannot be negative');
+                            // Still update the value so user can see it, but mark as invalid
+                            handleParamChange(param.name, numValue);
+                          } else {
+                            setErrorMessage('');
+                            handleParamChange(param.name, numValue);
+                          }
+                        }
+                      } 
+                      // For other parameters that must be positive
+                      else if (value !== '' && (param.name === 'p' || param.name === 'lambda' || param.name === 'shape' || param.name === 'scale')) {
                         const numValue = parseFloat(value);
                         if (numValue > 0) {
                           handleParamChange(param.name, numValue);
                         }
                         // Ignore non-positive values but allow empty input
-                      } else {
+                      } 
+                      // For other parameters including mean
+                      else {
                         handleParamChange(param.name, value === '' ? param.defaultValue : parseFloat(value));
                       }
                     }

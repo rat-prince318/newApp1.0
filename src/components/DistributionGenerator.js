@@ -24,7 +24,7 @@ function DistributionGenerator(_a) {
             name: 'Normal Distribution',
             params: [
                 { name: 'mean', label: 'Mean (μ)', min: -100, max: 100, step: 0.1, defaultValue: 0 },
-                { name: 'std', label: 'Standard Deviation (σ)', min: 0.1, max: 20, step: 0.1, defaultValue: 1 },
+                { name: 'std', label: 'Standard Deviation (σ)', min: -100, max: 100, step: 0.1, defaultValue: 0 },
             ],
             formula: 'f(x) = (1/(σ√(2π))) * e^(-(x-μ)²/(2σ²))',
         },
@@ -173,10 +173,17 @@ function DistributionGenerator(_a) {
     };
     var handleGenerate = function () {
         try {
-            setErrorMessage('');
+            // Clear previous errors except for standard deviation negative error
+            if (errorMessage !== 'Standard deviation cannot be negative') {
+                setErrorMessage('');
+            }
             // Validate parameters
             if (selectedDistribution === 'uniform' && params.a >= params.b) {
                 throw new Error('Minimum value must be less than maximum value for uniform distribution');
+            }
+            // Validate standard deviation before generating
+            if (selectedDistribution === 'normal' && params.std !== undefined && params.std <= 0) {
+                throw new Error('Standard deviation must be positive for normal distribution');
             }
             // Use setTimeout to simulate asynchronous operation without async/await
             setTimeout(function () {
@@ -189,8 +196,7 @@ function DistributionGenerator(_a) {
                         formula: config.formula,
                         parameters: __assign({}, params),
                     });
-                }
-                catch (error) {
+                } catch (error) {
                     setErrorMessage(error instanceof Error ? error.message : 'Error generating data');
                 }
             }, 300);
@@ -213,16 +219,36 @@ function DistributionGenerator(_a) {
                                             var value = e.target.value;
                                             // Allow empty or numeric values
                                             if (value === '' || /^-?\d*\.?\d*$/.test(value)) {
-                                                // For standard deviation and parameters that must be positive
-                                            if (value !== '' && (param.name === 'std' || param.name === 'p' || param.name === 'lambda' || param.name === 'shape' || param.name === 'scale')) {
-                                                var numValue = parseFloat(value);
-                                                if (numValue > 0) {
-                                                    handleParamChange(param.name, numValue);
+                                                // Handle standard deviation separately for negative value error
+                                                if (param.name === 'std') {
+                                                    if (value === '') {
+                                                        handleParamChange(param.name, undefined);
+                                                        setErrorMessage('');
+                                                    } else {
+                                                        var numValue = parseFloat(value);
+                                                        if (numValue < 0) {
+                                                            // Set error message for negative standard deviation
+                                                            setErrorMessage('Standard deviation cannot be negative');
+                                                            // Still update the value so user can see it, but mark as invalid
+                                                            handleParamChange(param.name, numValue);
+                                                        } else {
+                                                            setErrorMessage('');
+                                                            handleParamChange(param.name, numValue);
+                                                        }
+                                                    }
                                                 }
-                                                // Ignore non-positive values but allow empty input
-                                            } else {
-                                                handleParamChange(param.name, value === '' ? param.defaultValue : parseFloat(value));
-                                            }
+                                                // For other parameters that must be positive
+                                                else if (value !== '' && (param.name === 'p' || param.name === 'lambda' || param.name === 'shape' || param.name === 'scale')) {
+                                                    var numValue = parseFloat(value);
+                                                    if (numValue > 0) {
+                                                        handleParamChange(param.name, numValue);
+                                                    }
+                                                    // Ignore non-positive values but allow empty input
+                                                }
+                                                // For other parameters including mean
+                                                else {
+                                                    handleParamChange(param.name, value === '' ? param.defaultValue : parseFloat(value));
+                                                }
                                             }
                                         } })] }, param.name)); }), _jsx(Button, { onClick: handleGenerate, colorScheme: "blue", variant: "solid", size: "lg", children: "Generate Data" }), errorMessage && (_jsxs(Alert, { status: "error", children: [_jsx(AlertIcon, {}), _jsx(AlertDescription, { children: errorMessage })] }))] }) }), _jsx(GridItem, { children: _jsxs(Box, { p: 4, bg: "gray.50", borderRadius: "md", height: "100%", children: [_jsx(Text, { fontWeight: "bold", fontSize: "lg", mb: 2, children: currentConfig.name }), currentConfig.formula && (_jsx(Box, { mb: 4, p: 2, bg: "white", borderRadius: "md", children: _jsx(Text, { fontFamily: "monospace", fontSize: "sm", children: currentConfig.formula }) })), _jsx(Text, { fontWeight: "bold", mb: 2, children: "Parameter Description:" }), currentConfig.params.map(function (param) { return (_jsxs(Text, { fontSize: "sm", mb: 1, children: [_jsxs("strong", { children: [param.label, ":"] }), " ", param.name === 'mean' ? 'Central location of the distribution' :
                                         param.name === 'std' ? 'Degree of dispersion of the distribution' :
