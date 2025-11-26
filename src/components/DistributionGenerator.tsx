@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Box, Text, Select, VStack, Grid, GridItem, Alert, AlertIcon, AlertDescription, Input } from '@chakra-ui/react';
 import { DistributionConfig, DistributionGeneratorProps } from '../types';
 
-function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
+const DistributionGenerator: React.FC<DistributionGeneratorProps> = ({ onDataChange }) => {
   const [sampleSize, setSampleSize] = useState<string>('');
   const [selectedDistribution, setSelectedDistribution] = useState<string>('normal');
   const [params, setParams] = useState<Record<string, number | undefined>>({});
@@ -206,12 +206,10 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
           const config = distributionConfigs[selectedDistribution];
           
           onDataChange(data, {
-            type: selectedDistribution as string,
             type: selectedDistribution,
             name: config.name,
             formula: config.formula,
             parameters: { ...params } as Record<string, number>,
-          });
           });
         } catch (error) {
           setErrorMessage(
