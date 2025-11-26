@@ -1876,6 +1876,29 @@ const normalPDF = (x: number, mean: number = 0, std: number = 1): number => {
 };
 
 /**
+ * Normal distribution probability density function
+ */
+export const normalDistribution = (x: number, mean: number = 0, std: number = 1): number => {
+  return normalPDF(x, mean, std);
+};
+
+/**
+ * Uniform distribution probability density function
+ */
+export const uniformDistribution = (x: number, min: number = 0, max: number = 1): number => {
+  if (x < min || x > max) return 0;
+  return 1 / (max - min);
+};
+
+/**
+ * Exponential distribution probability density function
+ */
+export const exponentialDistribution = (x: number, lambda: number = 1): number => {
+  if (x < 0) return 0;
+  return lambda * Math.exp(-lambda * x);
+};
+
+/**
  * 阶乘函数
  */
 const factorial = (n: number): number => {
@@ -2338,3 +2361,17 @@ function gamma(z: number): number {
   
   return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
 }
+
+/**
+ * Binomial distribution probability mass function
+ */
+export const binomialDistribution = (k: number, n: number, p: number): number => {
+  return binomialPMF(k, n, p);
+};
+
+/**
+ * Poisson distribution probability mass function
+ */
+export const poissonDistribution = (k: number, lambda: number): number => {
+  return poissonPMF(k, lambda);
+};

@@ -8,6 +8,7 @@ import MLEMoMTab from '../components/MLEMoMTab';
 import HypothesisTestingTab from '../components/HypothesisTestingTab';
 import SampleSizeCalculator from '../components/SampleSizeCalculator';
 import GoodnessOfFitTest from '../components/GoodnessOfFitTest';
+import ProbabilityDistribution from '../components/ProbabilityDistribution';
 import { calculateMean, calculateStd, calculateMedian, calculateSkewness, calculateKurtosis } from '../utils/statistics';
 
 // Define dataset interface
@@ -408,6 +409,9 @@ const StatisticsApp: React.FC = () => {
                 </Box>
               </Stack>
             </TabPanel>
+            <TabPanel>
+              <ProbabilityDistribution data={currentDataset} />
+            </TabPanel>
           </TabPanels>
         </Tabs>
       </Box>
@@ -572,6 +576,7 @@ const StatisticsApp: React.FC = () => {
             <Tab>Hypothesis Testing</Tab>
             <Tab>Goodness of Fit Test</Tab>
             <Tab>Sample Size Calculation</Tab>
+            <Tab>Probability Distribution</Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
@@ -622,6 +627,10 @@ const StatisticsApp: React.FC = () => {
               <SampleSizeCalculator 
                 basicStats={basicStats}
               />
+            </TabPanel>
+
+            <TabPanel>
+              <ProbabilityDistribution />
             </TabPanel>
 
           </TabPanels>
