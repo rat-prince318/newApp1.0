@@ -98,6 +98,15 @@ export interface EstimationResult {
   params: Record<string, number>;
 };
 
+// Confidence interval result interface
+export interface ConfidenceIntervalResult {
+  lowerBound: number;
+  upperBound: number;
+  tailType: 'left' | 'right' | 'two';
+  confidenceLevel: number;
+  method: string;
+};
+
 // Goodness-of-fit test interfaces
 export type GoFTestType = 'kolmogorov-smirnov' | 'chi-square' | 'anderson-darling' | 'shapiro-wilk' | 'jarque-bera';
 
