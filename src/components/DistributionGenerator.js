@@ -14,7 +14,7 @@ import { useState, useEffect } from 'react';
 import { Button, Box, Text, Select, VStack, Grid, GridItem, Alert, AlertIcon, AlertDescription, Input } from '@chakra-ui/react';
 function DistributionGenerator(_a) {
     var onDataChange = _a.onDataChange;
-    var _b = useState('none'), sampleSize = _b[0], setSampleSize = _b[1];
+    var _b = useState(''), sampleSize = _b[0], setSampleSize = _b[1];
     var _c = useState('normal'), selectedDistribution = _c[0], setSelectedDistribution = _c[1];
     var _d = useState({}), params = _d[0], setParams = _d[1];
     var _e = useState(''), errorMessage = _e[0], setErrorMessage = _e[1];
@@ -84,8 +84,8 @@ function DistributionGenerator(_a) {
     };
     var generateMockData = function () {
         var data = [];
-        // Use default sample size if none is specified or not a valid number
-        var actualSampleSize = sampleSize === 'none' || isNaN(Number(sampleSize)) ? 1000 : Number(sampleSize);
+        // Use default sample size if not specified or not a valid number
+        var actualSampleSize = isNaN(Number(sampleSize)) || Number(sampleSize) <= 0 ? 1000 : Number(sampleSize);
         switch (selectedDistribution) {
             case 'normal':
                 for (var i = 0; i < actualSampleSize; i++) {
@@ -209,12 +209,8 @@ function DistributionGenerator(_a) {
     return (_jsx(Box, { p: 4, children: _jsxs(Grid, { templateColumns: "1fr 1fr", gap: 6, children: [_jsx(GridItem, { children: _jsxs(VStack, { align: "stretch", spacing: 4, children: [_jsxs(Box, { children: [_jsx(Text, { mb: 2, fontWeight: "bold", children: "Select Distribution Type" }), _jsx(Select, { value: selectedDistribution, onChange: function (e) { return setSelectedDistribution(e.target.value); }, children: Object.entries(distributionConfigs).map(function (_a) {
                                             var key = _a[0], config = _a[1];
                                             return (_jsx("option", { value: key, children: config.name }, key));
-                                        }) })] }), _jsxs(Box, { children: [_jsx(Text, { mb: 2, fontWeight: "bold", children: "Sample Size" }), _jsx(Input, { type: "text", placeholder: "Enter sample size or 'none'", value: sampleSize, onChange: function (e) {
-                                                var value = e.target.value;
-                                                // Allow 'none' or numeric values
-                                                if (value === 'none' || /^\d*$/.test(value)) {
-                                                    setSampleSize(value);
-                                                }
+                                        }) })] }), _jsxs(Box, { children: [_jsx(Text, { mb: 2, fontWeight: "bold", children: "Sample Size" }), _jsx(Input, { type: "text", placeholder: "Enter sample size", value: sampleSize, onChange: function (e) {
+                                                setSampleSize(e.target.value);
                                             } })] }), currentConfig.params.map(function (param) { return (_jsxs(Box, { children: [_jsx(Text, { mb: 2, fontWeight: "bold", children: param.label }), _jsx(Input, { type: "text", placeholder: "Enter " + param.name, value: params[param.name] || '', onChange: function (e) {
                                             var value = e.target.value;
                                             // Allow empty or numeric values

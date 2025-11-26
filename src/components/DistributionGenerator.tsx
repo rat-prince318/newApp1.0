@@ -3,7 +3,7 @@ import { Button, Box, Text, Select, VStack, Grid, GridItem, Alert, AlertIcon, Al
 import { DistributionConfig, DistributionGeneratorProps } from '../types';
 
 function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
-  const [sampleSize, setSampleSize] = useState<string>('none');
+  const [sampleSize, setSampleSize] = useState<string>('');
   const [selectedDistribution, setSelectedDistribution] = useState<string>('normal');
   const [params, setParams] = useState<Record<string, number | undefined>>({});
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -68,17 +68,25 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
     setParams(initialParams);
   }, [selectedDistribution]);
 
-  const handleParamChange = (paramName: string, value: number | undefined) => {
+  const handleParamChange = (paramName: string, value: number | undefined): void => {
     setParams((prevParams) => ({
       ...prevParams,
       [paramName]: value,
     }));
   };
 
+  // Helper function to generate normal random values using Box-Muller transform
+  const getNormalRandom = (mean: number = 0, std: number = 1): number => {
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    return mean + std * z;
+  };
+
   const generateMockData = (): number[] => {
     const data: number[] = [];
-    // Use default sample size if none is specified or not a valid number
-    const actualSampleSize = sampleSize === 'none' || isNaN(Number(sampleSize)) ? 1000 : Number(sampleSize);
+    // Use default sample size if not specified or not a valid number
+    const actualSampleSize = isNaN(Number(sampleSize)) || Number(sampleSize) <= 0 ? 1000 : Number(sampleSize);
     
     switch (selectedDistribution) {
       case 'normal':
@@ -86,21 +94,23 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
           const u1 = Math.random();
           const u2 = Math.random();
           const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-          data.push(params.mean + params.std * z);
+          const mean = params.mean || 0;
+          const std = params.std || 1;
+          data.push(mean + std * z);
         }
         break;
       
       case 'uniform':
-        const a = params.a;
-        const b = params.b;
+        const a = params.a || 0;
+        const b = params.b || 1;
         for (let i = 0; i < actualSampleSize; i++) {
           data.push(a + Math.random() * (b - a));
         }
         break;
       
       case 'binomial':
-        const n = params.n;
-        const p = params.p;
+        const n = params.n || 10;
+        const p = params.p || 0.5;
         for (let i = 0; i < actualSampleSize; i++) {
           let successes = 0;
           for (let j = 0; j < n; j++) {
@@ -113,7 +123,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
         break;
       
       case 'poisson':
-        const lambda = params.lambda;
+        const lambda = params.lambda || 1;
         for (let i = 0; i < actualSampleSize; i++) {
           let k = 0;
           let p = 1;
@@ -127,15 +137,15 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
         break;
       
       case 'exponential':
-        const expLambda = params.lambda;
+        const expLambda = params.lambda || 1;
         for (let i = 0; i < actualSampleSize; i++) {
           data.push(-Math.log(Math.random()) / expLambda);
         }
         break;
       
       case 'gamma':
-        const shape = params.shape;
-        const scale = params.scale;
+        const shape = params.shape || 2;
+        const scale = params.scale || 1;
         for (let i = 0; i < actualSampleSize; i++) {
           // Generate gamma distribution random numbers using Marsaglia and Tsang's method
           if (shape < 1) {
@@ -172,7 +182,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
     return data;
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = (): void => {
     try {
       // Clear previous errors except for standard deviation negative error
       if (errorMessage !== 'Standard deviation cannot be negative') {
@@ -196,10 +206,12 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
           const config = distributionConfigs[selectedDistribution];
           
           onDataChange(data, {
+            type: selectedDistribution as string,
             type: selectedDistribution,
             name: config.name,
             formula: config.formula,
-            parameters: { ...params },
+            parameters: { ...params } as Record<string, number>,
+          });
           });
         } catch (error) {
           setErrorMessage(
@@ -237,14 +249,10 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
               <Text mb={2} fontWeight="bold">Sample Size</Text>
               <Input
                 type="text"
-                placeholder="Enter sample size or 'none'"
+                placeholder="Enter sample size"
                 value={sampleSize}
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Allow 'none' or numeric values
-                  if (value === 'none' || /^\d*$/.test(value)) {
-                    setSampleSize(value);
-                  }
+                  setSampleSize(e.target.value);
                 }}
               />
             </Box>
@@ -288,7 +296,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
                       } 
                       // For other parameters including mean
                       else {
-                        handleParamChange(param.name, value === '' ? param.defaultValue : parseFloat(value));
+                        handleParamChange(param.name, value === '' ? param.defaultValue : Number(value));
                       }
                     }
                   }}
