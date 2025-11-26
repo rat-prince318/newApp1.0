@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Button, Box, Text, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Select, VStack, Grid, GridItem, Alert, AlertIcon, AlertDescription } from '@chakra-ui/react';
+import { Button, Box, Text, Select, VStack, Grid, GridItem, Alert, AlertIcon, AlertDescription, Input } from '@chakra-ui/react';
 import { DistributionConfig, DistributionGeneratorProps } from '../types';
 
 function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
-  const [sampleSize, setSampleSize] = useState<number>(1000);
+  const [sampleSize, setSampleSize] = useState<string>('none');
   const [selectedDistribution, setSelectedDistribution] = useState<string>('normal');
   const [params, setParams] = useState<Record<string, number>>({});
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -77,10 +77,12 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
 
   const generateMockData = (): number[] => {
     const data: number[] = [];
+    // Use default sample size if none is specified or not a valid number
+    const actualSampleSize = sampleSize === 'none' || isNaN(Number(sampleSize)) ? 1000 : Number(sampleSize);
     
     switch (selectedDistribution) {
       case 'normal':
-        for (let i = 0; i < sampleSize; i++) {
+        for (let i = 0; i < actualSampleSize; i++) {
           const u1 = Math.random();
           const u2 = Math.random();
           const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
@@ -91,7 +93,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
       case 'uniform':
         const a = params.a;
         const b = params.b;
-        for (let i = 0; i < sampleSize; i++) {
+        for (let i = 0; i < actualSampleSize; i++) {
           data.push(a + Math.random() * (b - a));
         }
         break;
@@ -99,7 +101,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
       case 'binomial':
         const n = params.n;
         const p = params.p;
-        for (let i = 0; i < sampleSize; i++) {
+        for (let i = 0; i < actualSampleSize; i++) {
           let successes = 0;
           for (let j = 0; j < n; j++) {
             if (Math.random() < p) {
@@ -112,7 +114,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
       
       case 'poisson':
         const lambda = params.lambda;
-        for (let i = 0; i < sampleSize; i++) {
+        for (let i = 0; i < actualSampleSize; i++) {
           let k = 0;
           let p = 1;
           const l = Math.exp(-lambda);
@@ -126,7 +128,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
       
       case 'exponential':
         const expLambda = params.lambda;
-        for (let i = 0; i < sampleSize; i++) {
+        for (let i = 0; i < actualSampleSize; i++) {
           data.push(-Math.log(Math.random()) / expLambda);
         }
         break;
@@ -134,7 +136,7 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
       case 'gamma':
         const shape = params.shape;
         const scale = params.scale;
-        for (let i = 0; i < sampleSize; i++) {
+        for (let i = 0; i < actualSampleSize; i++) {
           // Generate gamma distribution random numbers using Marsaglia and Tsang's method
           if (shape < 1) {
             // Fix: Use acceptance-rejection method instead of recursive calls
@@ -224,36 +226,45 @@ function DistributionGenerator({ onDataChange }: DistributionGeneratorProps) {
             </Box>
             
             <Box>
-              <Text mb={2} fontWeight="bold">Sample Size: {sampleSize}</Text>
-              <Slider
-                min={10}
-                max={10000}
-                step={10}
+              <Text mb={2} fontWeight="bold">Sample Size</Text>
+              <Input
+                type="text"
+                placeholder="Enter sample size or 'none'"
                 value={sampleSize}
-                onChange={(val) => setSampleSize(val)}
-              >
-                <SliderTrack>
-                  <SliderFilledTrack />
-                </SliderTrack>
-                <SliderThumb />
-              </Slider>
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow 'none' or numeric values
+                  if (value === 'none' || /^\d*$/.test(value)) {
+                    setSampleSize(value);
+                  }
+                }}
+              />
             </Box>
             
             {currentConfig.params.map((param) => (
               <Box key={param.name}>
-                <Text mb={2} fontWeight="bold">{param.label}: {params[param.name]}</Text>
-                <Slider
-                  min={param.min}
-                  max={param.max}
-                  step={param.step}
-                  value={params[param.name] || param.defaultValue}
-                  onChange={(val) => handleParamChange(param.name, val)}
-                >
-                  <SliderTrack>
-                    <SliderFilledTrack />
-                  </SliderTrack>
-                  <SliderThumb />
-                </Slider>
+                <Text mb={2} fontWeight="bold">{param.label}</Text>
+                <Input
+                  type="text"
+                  placeholder={`Enter ${param.name}`}
+                  value={params[param.name] || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow empty or numeric values
+                    if (value === '' || /^-?\d*\.?\d*$/.test(value)) {
+                      // For standard deviation and parameters that must be positive
+                      if (value !== '' && (param.name === 'std' || param.name === 'p' || param.name === 'lambda' || param.name === 'shape' || param.name === 'scale')) {
+                        const numValue = parseFloat(value);
+                        if (numValue > 0) {
+                          handleParamChange(param.name, numValue);
+                        }
+                        // Ignore non-positive values but allow empty input
+                      } else {
+                        handleParamChange(param.name, value === '' ? param.defaultValue : parseFloat(value));
+                      }
+                    }
+                  }}
+                />
               </Box>
             ))}
             

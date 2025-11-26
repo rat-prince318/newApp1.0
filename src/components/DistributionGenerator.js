@@ -11,10 +11,10 @@ var __assign = (this && this.__assign) || function () {
 };
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
-import { Button, Box, Text, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Select, VStack, Grid, GridItem, Alert, AlertIcon, AlertDescription } from '@chakra-ui/react';
+import { Button, Box, Text, Select, VStack, Grid, GridItem, Alert, AlertIcon, AlertDescription, Input } from '@chakra-ui/react';
 function DistributionGenerator(_a) {
     var onDataChange = _a.onDataChange;
-    var _b = useState(1000), sampleSize = _b[0], setSampleSize = _b[1];
+    var _b = useState('none'), sampleSize = _b[0], setSampleSize = _b[1];
     var _c = useState('normal'), selectedDistribution = _c[0], setSelectedDistribution = _c[1];
     var _d = useState({}), params = _d[0], setParams = _d[1];
     var _e = useState(''), errorMessage = _e[0], setErrorMessage = _e[1];
@@ -84,9 +84,11 @@ function DistributionGenerator(_a) {
     };
     var generateMockData = function () {
         var data = [];
+        // Use default sample size if none is specified or not a valid number
+        var actualSampleSize = sampleSize === 'none' || isNaN(Number(sampleSize)) ? 1000 : Number(sampleSize);
         switch (selectedDistribution) {
             case 'normal':
-                for (var i = 0; i < sampleSize; i++) {
+                for (var i = 0; i < actualSampleSize; i++) {
                     var u1 = Math.random();
                     var u2 = Math.random();
                     var z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
@@ -96,14 +98,14 @@ function DistributionGenerator(_a) {
             case 'uniform':
                 var a = params.a;
                 var b = params.b;
-                for (var i = 0; i < sampleSize; i++) {
+                for (var i = 0; i < actualSampleSize; i++) {
                     data.push(a + Math.random() * (b - a));
                 }
                 break;
             case 'binomial':
                 var n = params.n;
                 var p = params.p;
-                for (var i = 0; i < sampleSize; i++) {
+                for (var i = 0; i < actualSampleSize; i++) {
                     var successes = 0;
                     for (var j = 0; j < n; j++) {
                         if (Math.random() < p) {
@@ -115,7 +117,7 @@ function DistributionGenerator(_a) {
                 break;
             case 'poisson':
                 var lambda = params.lambda;
-                for (var i = 0; i < sampleSize; i++) {
+                for (var i = 0; i < actualSampleSize; i++) {
                     var k = 0;
                     var p_1 = 1;
                     var l = Math.exp(-lambda);
@@ -128,14 +130,14 @@ function DistributionGenerator(_a) {
                 break;
             case 'exponential':
                 var expLambda = params.lambda;
-                for (var i = 0; i < sampleSize; i++) {
+                for (var i = 0; i < actualSampleSize; i++) {
                     data.push(-Math.log(Math.random()) / expLambda);
                 }
                 break;
             case 'gamma':
                 var shape = params.shape;
                 var scale = params.scale;
-                for (var i = 0; i < sampleSize; i++) {
+                for (var i = 0; i < actualSampleSize; i++) {
                     // Generate gamma distribution random numbers using Marsaglia and Tsang's method
                     if (shape < 1) {
                         // Fix: Use acceptance-rejection method instead of recursive calls
@@ -201,7 +203,28 @@ function DistributionGenerator(_a) {
     return (_jsx(Box, { p: 4, children: _jsxs(Grid, { templateColumns: "1fr 1fr", gap: 6, children: [_jsx(GridItem, { children: _jsxs(VStack, { align: "stretch", spacing: 4, children: [_jsxs(Box, { children: [_jsx(Text, { mb: 2, fontWeight: "bold", children: "Select Distribution Type" }), _jsx(Select, { value: selectedDistribution, onChange: function (e) { return setSelectedDistribution(e.target.value); }, children: Object.entries(distributionConfigs).map(function (_a) {
                                             var key = _a[0], config = _a[1];
                                             return (_jsx("option", { value: key, children: config.name }, key));
-                                        }) })] }), _jsxs(Box, { children: [_jsxs(Text, { mb: 2, fontWeight: "bold", children: ["Sample Size: ", sampleSize] }), _jsxs(Slider, { min: 10, max: 10000, step: 10, value: sampleSize, onChange: function (val) { return setSampleSize(val); }, children: [_jsx(SliderTrack, { children: _jsx(SliderFilledTrack, {}) }), _jsx(SliderThumb, {})] })] }), currentConfig.params.map(function (param) { return (_jsxs(Box, { children: [_jsxs(Text, { mb: 2, fontWeight: "bold", children: [param.label, ": ", params[param.name]] }), _jsxs(Slider, { min: param.min, max: param.max, step: param.step, value: params[param.name] || param.defaultValue, onChange: function (val) { return handleParamChange(param.name, val); }, children: [_jsx(SliderTrack, { children: _jsx(SliderFilledTrack, {}) }), _jsx(SliderThumb, {})] })] }, param.name)); }), _jsx(Button, { onClick: handleGenerate, colorScheme: "blue", variant: "solid", size: "lg", children: "Generate Data" }), errorMessage && (_jsxs(Alert, { status: "error", children: [_jsx(AlertIcon, {}), _jsx(AlertDescription, { children: errorMessage })] }))] }) }), _jsx(GridItem, { children: _jsxs(Box, { p: 4, bg: "gray.50", borderRadius: "md", height: "100%", children: [_jsx(Text, { fontWeight: "bold", fontSize: "lg", mb: 2, children: currentConfig.name }), currentConfig.formula && (_jsx(Box, { mb: 4, p: 2, bg: "white", borderRadius: "md", children: _jsx(Text, { fontFamily: "monospace", fontSize: "sm", children: currentConfig.formula }) })), _jsx(Text, { fontWeight: "bold", mb: 2, children: "Parameter Description:" }), currentConfig.params.map(function (param) { return (_jsxs(Text, { fontSize: "sm", mb: 1, children: [_jsxs("strong", { children: [param.label, ":"] }), " ", param.name === 'mean' ? 'Central location of the distribution' :
+                                        }) })] }), _jsxs(Box, { children: [_jsx(Text, { mb: 2, fontWeight: "bold", children: "Sample Size" }), _jsx(Input, { type: "text", placeholder: "Enter sample size or 'none'", value: sampleSize, onChange: function (e) {
+                                                var value = e.target.value;
+                                                // Allow 'none' or numeric values
+                                                if (value === 'none' || /^\d*$/.test(value)) {
+                                                    setSampleSize(value);
+                                                }
+                                            } })] }), currentConfig.params.map(function (param) { return (_jsxs(Box, { children: [_jsx(Text, { mb: 2, fontWeight: "bold", children: param.label }), _jsx(Input, { type: "text", placeholder: "Enter " + param.name, value: params[param.name] || '', onChange: function (e) {
+                                            var value = e.target.value;
+                                            // Allow empty or numeric values
+                                            if (value === '' || /^-?\d*\.?\d*$/.test(value)) {
+                                                // For standard deviation and parameters that must be positive
+                                            if (value !== '' && (param.name === 'std' || param.name === 'p' || param.name === 'lambda' || param.name === 'shape' || param.name === 'scale')) {
+                                                var numValue = parseFloat(value);
+                                                if (numValue > 0) {
+                                                    handleParamChange(param.name, numValue);
+                                                }
+                                                // Ignore non-positive values but allow empty input
+                                            } else {
+                                                handleParamChange(param.name, value === '' ? param.defaultValue : parseFloat(value));
+                                            }
+                                            }
+                                        } })] }, param.name)); }), _jsx(Button, { onClick: handleGenerate, colorScheme: "blue", variant: "solid", size: "lg", children: "Generate Data" }), errorMessage && (_jsxs(Alert, { status: "error", children: [_jsx(AlertIcon, {}), _jsx(AlertDescription, { children: errorMessage })] }))] }) }), _jsx(GridItem, { children: _jsxs(Box, { p: 4, bg: "gray.50", borderRadius: "md", height: "100%", children: [_jsx(Text, { fontWeight: "bold", fontSize: "lg", mb: 2, children: currentConfig.name }), currentConfig.formula && (_jsx(Box, { mb: 4, p: 2, bg: "white", borderRadius: "md", children: _jsx(Text, { fontFamily: "monospace", fontSize: "sm", children: currentConfig.formula }) })), _jsx(Text, { fontWeight: "bold", mb: 2, children: "Parameter Description:" }), currentConfig.params.map(function (param) { return (_jsxs(Text, { fontSize: "sm", mb: 1, children: [_jsxs("strong", { children: [param.label, ":"] }), " ", param.name === 'mean' ? 'Central location of the distribution' :
                                         param.name === 'std' ? 'Degree of dispersion of the distribution' :
                                             param.name === 'a' ? 'Minimum value of the interval' :
                                                 param.name === 'b' ? 'Maximum value of the interval' :
