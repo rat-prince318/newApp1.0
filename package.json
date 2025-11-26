@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist/client"
+    "deploy": "gh-pages -d docs"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
