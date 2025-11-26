@@ -190,8 +190,12 @@ const DistributionGenerator: React.FC<DistributionGeneratorProps> = ({ onDataCha
       }
       
       // Validate parameters
-      if (selectedDistribution === 'uniform' && params.a >= params.b) {
-        throw new Error('Minimum value must be less than maximum value for uniform distribution');
+      if (selectedDistribution === 'uniform') {
+        const a = params.a !== undefined ? params.a : 0;
+        const b = params.b !== undefined ? params.b : 1;
+        if (a >= b) {
+          throw new Error('Minimum value must be less than maximum value for uniform distribution');
+        }
       }
       
       // Validate standard deviation before generating
